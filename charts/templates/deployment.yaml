@@ -37,9 +37,18 @@ spec:
           {{- end }}
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
+          env:
+            - name: STORCLI_PATH
+              value: {{ .Values.storcliExporter.storcliPath | quote }}
+            - name: METRICS_PATH
+              value: {{ .Values.storcliExporter.metricsPath | quote }}
+            - name: METRICS_PREFIX
+              value: {{ .Values.storcliExporter.metricsPreix | quote }}
+            - name: LISTEN_ADDRESS
+              value: {{ (printf ":%v" .Values.storcliExporter.port) | quote }}
           ports:
-            - name: http
-              containerPort: {{ .Values.service.port }}
+            - name: metrics
+              containerPort: {{ .Values.storcliExporter.port }}
               protocol: TCP
           {{- with .Values.livenessProbe }}
           livenessProbe:
