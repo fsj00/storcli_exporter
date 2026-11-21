@@ -5,23 +5,32 @@ import (
 	"flag"
 	"fmt"
 	"log"
+	"math"
 	"net/http"
+	"os"
 	"os/exec"
 	"strconv"
-	"time"
-	"math"
 	"strings"
+	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
 var (
-	argStorcliPath   = flag.String("storcli_path", "/opt/MegaRAID/storcli/storcli64", "Path to MegaRAID StorCLI or PercCLI binary. By default '/opt/MegaRAID/storcli/storcli64'.")
-	argMetricsPath   = flag.String("metrics_path", "/metrics", "Path under which to expose Prometheus metrics. By default '/metrics'.")
-	argMetricsPrefix = flag.String("metrics_prefix", "storcli", "Prefix for Prometheus metrics. By default 'storcli'.")
-	argListenAddress = flag.String("listen_address", ":9326", "Listen address for this exporter. By default ':9326'.")
+	argStorcliPath   = flag.String("storcli_path", envOrDefault("STORCLI_PATH", "/opt/MegaRAID/storcli/storcli64"), "Path to MegaRAID StorCLI or PercCLI binary. By default '/opt/MegaRAID/storcli/storcli64'.")
+	argMetricsPath   = flag.String("metrics_path", envOrDefault("METRICS_PATH", "/metrics"), "Path under which to expose Prometheus metrics. By default '/metrics'.")
+	argMetricsPrefix = flag.String("metrics_prefix", envOrDefault("METRICS_PREFIX", "storcli"), "Prefix for Prometheus metrics. By default 'storcli'.")
+	argListenAddress = flag.String("listen_address", envOrDefault("LISTEN_ADDRESS", ":9326"), "Listen address for this exporter. By default ':9326'.")
 )
+
+func envOrDefault(name, fallback string) string {
+	if value, ok := os.LookupEnv(name); ok && value != "" {
+		return value
+	}
+
+	return fallback
+}
 
 // Response is the response we fetch from StorCLI/PercCLI command output
 type Response struct {
@@ -44,11 +53,11 @@ type Response struct {
 				Size     string `json:"Size"`
 				Type     string `json:"Type"`
 			} `json:"PD LIST"`
-			DriveGroups  int `json:"Drive Groups"`
-			HardwareConfig  struct {
-				Temperature       int `json:"ROC temperature(Degree Celsius)"`
-				CacheCade         int `json:"Current Size of CacheCade (GB)"`
-				FirmwareCache     int `json:"Current Size of FW Cache (MB)"`
+			DriveGroups    int `json:"Drive Groups"`
+			HardwareConfig struct {
+				Temperature   int `json:"ROC temperature(Degree Celsius)"`
+				CacheCade     int `json:"Current Size of CacheCade (GB)"`
+				FirmwareCache int `json:"Current Size of FW Cache (MB)"`
 			} `json:"HwCfg"`
 			TOPOLOGYLIST []struct {
 				DiskGroup int         `json:"DG"`
@@ -65,30 +74,30 @@ type Response struct {
 }
 
 type DiskDetailedInfo struct {
-	shieldCounter           float64
-  mediaErrorCount         float64
-  otherErrorCount         float64
-  driveTemperature        float64
-  predictiveFailureCount  float64
+	shieldCounter          float64
+	mediaErrorCount        float64
+	otherErrorCount        float64
+	driveTemperature       float64
+	predictiveFailureCount float64
 }
 
 // Exporter is struct defining StorCLI/PercCLI exporter
 type Exporter struct {
-	physicalDriveStatus       *prometheus.Desc
-	virtualDriveStatus        *prometheus.Desc
-	physicalDriveCount        *prometheus.Desc
-	virtualDriveCount         *prometheus.Desc
-	driveGroupsCount          *prometheus.Desc
-	topologyStatus            *prometheus.Desc
-	scrapeSuccess             *prometheus.Desc
-	temperature               *prometheus.Desc
-	cacheCade                 *prometheus.Desc
-	firmwareCache             *prometheus.Desc
-	driveTemperature          *prometheus.Desc
-	shieldCounter             *prometheus.Desc
-	mediaErrorCount           *prometheus.Desc
-	otherErrorCount           *prometheus.Desc
-	predictiveFailureCount    *prometheus.Desc
+	physicalDriveStatus    *prometheus.Desc
+	virtualDriveStatus     *prometheus.Desc
+	physicalDriveCount     *prometheus.Desc
+	virtualDriveCount      *prometheus.Desc
+	driveGroupsCount       *prometheus.Desc
+	topologyStatus         *prometheus.Desc
+	scrapeSuccess          *prometheus.Desc
+	temperature            *prometheus.Desc
+	cacheCade              *prometheus.Desc
+	firmwareCache          *prometheus.Desc
+	driveTemperature       *prometheus.Desc
+	shieldCounter          *prometheus.Desc
+	mediaErrorCount        *prometheus.Desc
+	otherErrorCount        *prometheus.Desc
+	predictiveFailureCount *prometheus.Desc
 }
 
 func fetchStorcliOutput() (resp Response, err error) {
@@ -96,9 +105,9 @@ func fetchStorcliOutput() (resp Response, err error) {
 	if err != nil {
 		return Response{}, fmt.Errorf("Failed to execute command: %s", err)
 	}
-  if err != nil {
-      fmt.Print(err)
-  }
+	if err != nil {
+		fmt.Print(err)
+	}
 	var response Response
 	err = json.Unmarshal(output, &response)
 	if err != nil {
@@ -108,53 +117,53 @@ func fetchStorcliOutput() (resp Response, err error) {
 }
 
 func fetchStorcliOutputDisks(controllerNumber string, enclosureNumber string, slotNumber string) DiskDetailedInfo {
-  output, err := exec.Command(*argStorcliPath, "/call/eall/sall", "show", "all", "J").Output()
+	output, err := exec.Command(*argStorcliPath, "/call/eall/sall", "show", "all", "J").Output()
 	if err != nil {
 		return DiskDetailedInfo{}
 	}
-  if err != nil {
-      fmt.Print(err)
-  }
-  var data map[string]interface{}
-  if err := json.Unmarshal(output, &data); err != nil {
-    fmt.Println("Error:", err)
-    return DiskDetailedInfo{}
-  }
-  ctrlNum, err := strconv.Atoi(controllerNumber)
-  responseData := data["Controllers"].([]interface{})[ctrlNum].(map[string]interface{})["Response Data"].(map[string]interface{})
+	if err != nil {
+		fmt.Print(err)
+	}
+	var data map[string]interface{}
+	if err := json.Unmarshal(output, &data); err != nil {
+		fmt.Println("Error:", err)
+		return DiskDetailedInfo{}
+	}
+	ctrlNum, err := strconv.Atoi(controllerNumber)
+	responseData := data["Controllers"].([]interface{})[ctrlNum].(map[string]interface{})["Response Data"].(map[string]interface{})
 
-  driveTemperature := math.NaN()
+	driveTemperature := math.NaN()
 
-  detailedInfo := responseData["Drive /c" + controllerNumber + "/e" + enclosureNumber + "/s" + slotNumber + " - Detailed Information"].(map[string]interface{})
-  state := detailedInfo["Drive /c" + controllerNumber + "/e" + enclosureNumber + "/s" + slotNumber + " State"].(map[string]interface{})
+	detailedInfo := responseData["Drive /c"+controllerNumber+"/e"+enclosureNumber+"/s"+slotNumber+" - Detailed Information"].(map[string]interface{})
+	state := detailedInfo["Drive /c"+controllerNumber+"/e"+enclosureNumber+"/s"+slotNumber+" State"].(map[string]interface{})
 
-  driveTemperatureStr := state["Drive Temperature"].(string)
+	driveTemperatureStr := state["Drive Temperature"].(string)
 
-  driveTemperatureParts := strings.Split(driveTemperatureStr, "C")
-  if len(driveTemperatureParts) != 2 {
-    log.Printf("Failed to parse temperature: %s", err)
-  } else {
-    driveTemperatureValue := strings.TrimSpace(driveTemperatureParts[0])
-    driveTemperatureInt, err := strconv.Atoi(driveTemperatureValue)
-    driveTemperature = float64(driveTemperatureInt)
-    if err != nil {
-      fmt.Print(err)
-      driveTemperature = math.NaN()
-    }
-  }
+	driveTemperatureParts := strings.Split(driveTemperatureStr, "C")
+	if len(driveTemperatureParts) != 2 {
+		log.Printf("Failed to parse temperature: %s", err)
+	} else {
+		driveTemperatureValue := strings.TrimSpace(driveTemperatureParts[0])
+		driveTemperatureInt, err := strconv.Atoi(driveTemperatureValue)
+		driveTemperature = float64(driveTemperatureInt)
+		if err != nil {
+			fmt.Print(err)
+			driveTemperature = math.NaN()
+		}
+	}
 
-  shieldCounter := state["Shield Counter"].(float64)
-  mediaErrorCount := state["Media Error Count"].(float64)
-  otherErrorCount := state["Other Error Count"].(float64)
-  predictiveFailureCount := state["Predictive Failure Count"].(float64)
+	shieldCounter := state["Shield Counter"].(float64)
+	mediaErrorCount := state["Media Error Count"].(float64)
+	otherErrorCount := state["Other Error Count"].(float64)
+	predictiveFailureCount := state["Predictive Failure Count"].(float64)
 
-  return DiskDetailedInfo{
-			shieldCounter:          shieldCounter,
-      mediaErrorCount:        mediaErrorCount,
-      otherErrorCount:        otherErrorCount,
-      driveTemperature:       driveTemperature,
-      predictiveFailureCount: predictiveFailureCount,
-	  }
+	return DiskDetailedInfo{
+		shieldCounter:          shieldCounter,
+		mediaErrorCount:        mediaErrorCount,
+		otherErrorCount:        otherErrorCount,
+		driveTemperature:       driveTemperature,
+		predictiveFailureCount: predictiveFailureCount,
+	}
 }
 
 // NewExporter creates a new object of type Exporter
@@ -172,9 +181,9 @@ func NewExporter() *Exporter {
 		firmwareCache:          FirmwareCache,
 		driveTemperature:       DriveTemperature,
 		shieldCounter:          ShieldCounter,
-	  mediaErrorCount:        MediaErrorCount,
-	  otherErrorCount:        OtherErrorCount,
-	  predictiveFailureCount: PredictiveFailureCount,
+		mediaErrorCount:        MediaErrorCount,
+		otherErrorCount:        OtherErrorCount,
+		predictiveFailureCount: PredictiveFailureCount,
 	}
 }
 
@@ -225,36 +234,35 @@ func (e *Exporter) Collect(ch chan<- prometheus.Metric) {
 			)
 
 			parts := strings.Split(physicalDrive.Position, ":")
-      if len(parts) != 2 {
-        log.Printf("Failed to process StorCLI output: %s", err)
-        continue
-      }
-      enclosureNumber := parts[0]
-      slotNumber := parts[1]
+			if len(parts) != 2 {
+				log.Printf("Failed to process StorCLI output: %s", err)
+				continue
+			}
+			enclosureNumber := parts[0]
+			slotNumber := parts[1]
 
-      response := fetchStorcliOutputDisks(strconv.Itoa(controllerNumber), enclosureNumber, slotNumber)
-      ch <- prometheus.MustNewConstMetric(
-        e.driveTemperature, prometheus.GaugeValue, response.driveTemperature,
-        strconv.Itoa(controllerNumber), enclosureNumber, slotNumber,
-      )
-      ch <- prometheus.MustNewConstMetric(
-        e.shieldCounter, prometheus.GaugeValue, response.shieldCounter,
-        strconv.Itoa(controllerNumber), enclosureNumber, slotNumber,
-      )
-      ch <- prometheus.MustNewConstMetric(
-        e.mediaErrorCount, prometheus.GaugeValue, response.mediaErrorCount,
-        strconv.Itoa(controllerNumber), enclosureNumber, slotNumber,
-      )
-      ch <- prometheus.MustNewConstMetric(
-        e.otherErrorCount, prometheus.GaugeValue, response.otherErrorCount,
-        strconv.Itoa(controllerNumber), enclosureNumber, slotNumber,
-      )
-      ch <- prometheus.MustNewConstMetric(
-        e.predictiveFailureCount, prometheus.GaugeValue,
-        response.predictiveFailureCount,
-        strconv.Itoa(controllerNumber), enclosureNumber, slotNumber,
-      )
-
+			response := fetchStorcliOutputDisks(strconv.Itoa(controllerNumber), enclosureNumber, slotNumber)
+			ch <- prometheus.MustNewConstMetric(
+				e.driveTemperature, prometheus.GaugeValue, response.driveTemperature,
+				strconv.Itoa(controllerNumber), enclosureNumber, slotNumber,
+			)
+			ch <- prometheus.MustNewConstMetric(
+				e.shieldCounter, prometheus.GaugeValue, response.shieldCounter,
+				strconv.Itoa(controllerNumber), enclosureNumber, slotNumber,
+			)
+			ch <- prometheus.MustNewConstMetric(
+				e.mediaErrorCount, prometheus.GaugeValue, response.mediaErrorCount,
+				strconv.Itoa(controllerNumber), enclosureNumber, slotNumber,
+			)
+			ch <- prometheus.MustNewConstMetric(
+				e.otherErrorCount, prometheus.GaugeValue, response.otherErrorCount,
+				strconv.Itoa(controllerNumber), enclosureNumber, slotNumber,
+			)
+			ch <- prometheus.MustNewConstMetric(
+				e.predictiveFailureCount, prometheus.GaugeValue,
+				response.predictiveFailureCount,
+				strconv.Itoa(controllerNumber), enclosureNumber, slotNumber,
+			)
 
 		}
 		for _, topology := range controller.ResponseData.TOPOLOGYLIST {
@@ -264,7 +272,7 @@ func (e *Exporter) Collect(ch chan<- prometheus.Metric) {
 				fmt.Sprint(topology.Row), fmt.Sprint(topology.Device), topology.State, topology.Type, topology.Size,
 			)
 		}
-  }
+	}
 }
 
 func main() {

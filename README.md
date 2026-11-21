@@ -28,6 +28,18 @@ Usage of ./storcli_exporter:
     	Path to MegaRAID StorCLI or PercCLI binary. By default '/opt/MegaRAID/storcli/storcli64'. (default "/opt/MegaRAID/storcli/storcli64")
 ```
 
+Flags can also be configured with environment variables:
+
+| Flag | Environment variable |
+| --- | --- |
+| `-listen_address` | `LISTEN_ADDRESS` |
+| `-metrics_path` | `METRICS_PATH` |
+| `-metrics_prefix` | `METRICS_PREFIX` |
+| `-storcli_path` | `STORCLI_PATH` |
+
+CLI flags take precedence over environment variables. If neither is set, the
+built-in default is used.
+
 ## Prometheus
 Exporter metrics for Prometheus
 ```
