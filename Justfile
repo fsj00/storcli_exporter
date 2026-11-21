@@ -7,3 +7,6 @@ build *ARGS:
         {{ ARGS }}
 
 push *ARGS: (build "--push" ARGS)
+
+bin:
+    CGO_ENABLED=0 GOOS=linux go build     -trimpath     -ldflags="-s -w" -o ./build/storcli_exporter
