@@ -1,0 +1,29 @@
+registry := "git.hener.app"
+organization := "hener-oss"
+chart_name := "storcli-exporter-chart"
+chart_dir := "."
+version := `grep 'version:' ./Chart.yaml | awk '{print $2}'`
+
+default:
+    @just --list
+
+# Log in to the OCI registry (run this once)
+login:
+    @echo "Logging into {{ registry }}..."
+    helm registry login {{ registry }}
+
+# Lint the chart to catch syntax errors
+lint:
+    helm lint {{ chart_dir }}
+
+# Package the chart into a .tgz file
+package: lint
+    helm package {{ chart_dir }}
+
+# Push the packaged chart to the OCI registry
+push: package
+    @echo "Pushing {{ chart_name }} version {{ version }} to {{ registry }}..."
+    helm push {{ chart_name }}-{{ version }}.tgz oci://{{ registry }}/{{ organization }}
+
+# Lint, Package, and Push
+release: push

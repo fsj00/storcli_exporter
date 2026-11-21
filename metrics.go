@@ -62,4 +62,74 @@ var (
 		},
 		nil,
 	)
+
+	// Temperature returns new Prometheus metric description
+	Temperature = prometheus.NewDesc(
+		prometheus.BuildFQName(*argMetricsPrefix, "", "temperature"),
+		"ROC temperature(Degree Celsius).",
+		[]string{"controller"},
+		nil,
+	)
+
+	// CacheCade returns new Prometheus metric description
+	CacheCade = prometheus.NewDesc(
+		prometheus.BuildFQName(*argMetricsPrefix, "", "cacheCade"),
+		"Current Size of CacheCade (GB).",
+		[]string{"controller"},
+		nil,
+	)
+
+	// FirmwareCache returns new Prometheus metric description
+	FirmwareCache = prometheus.NewDesc(
+		prometheus.BuildFQName(*argMetricsPrefix, "", "firmwareCache"),
+		"Current Size of FW Cache (MB).",
+		[]string{"controller"},
+		nil,
+	)
+
+	// Physical drive state
+	DriveTemperature = prometheus.NewDesc(
+		prometheus.BuildFQName(*argMetricsPrefix, "", "drive_temperature"),
+		"Temperature of the Physical Drive.",
+		[]string{
+			"controller", "enclosure", "slot",
+		},
+		nil,
+	)
+
+	ShieldCounter = prometheus.NewDesc(
+		prometheus.BuildFQName(*argMetricsPrefix, "", "shield_counter"),
+		"Shield counter of the Physical Drive.",
+		[]string{
+			"controller", "enclosure", "slot",
+		},
+		nil,
+	)
+
+	MediaErrorCount = prometheus.NewDesc(
+		prometheus.BuildFQName(*argMetricsPrefix, "", "media_error_count"),
+		"Media error count of the Physical Drive.",
+		[]string{
+			"controller", "enclosure", "slot",
+		},
+		nil,
+	)
+
+	OtherErrorCount = prometheus.NewDesc(
+		prometheus.BuildFQName(*argMetricsPrefix, "", "other_error_count"),
+		"Other error count of the Physical Drive.",
+		[]string{
+			"controller", "enclosure", "slot",
+		},
+		nil,
+	)
+
+	PredictiveFailureCount = prometheus.NewDesc(
+		prometheus.BuildFQName(*argMetricsPrefix, "", "predictive_failure_count"),
+		"Predictive failure count of the Physical Drive.",
+		[]string{
+			"controller", "enclosure", "slot",
+		},
+		nil,
+	)
 )

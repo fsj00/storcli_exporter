@@ -1,0 +1,45 @@
+image:
+  repository: "git.hener.app/hener-oss/storcli-exporter"
+  pullPolicy: IfNotPresent
+  tag: "latest"
+
+storcliExporter:
+  storcliPath: /opt/MegaRAID/storcli/storcli64
+  metricsPath: /metrics
+  metricsPreix: storcli
+  port: 9326
+
+podMonitor:
+  enabled: true
+  interval: 1m
+
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+
+podAnnotations: {}
+podLabels: {}
+
+podSecurityContext: {}
+
+securityContext:
+  privileged: true
+
+resources: {}
+
+livenessProbe:
+  httpGet:
+    path: /livez
+    port: metrics
+readinessProbe:
+  httpGet:
+    path: /readyz
+    port: metrics
+
+volumes: []
+
+volumeMounts: []
+
+nodeSelector: {}
+
+tolerations: []

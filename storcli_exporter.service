@@ -3,7 +3,11 @@ Description=Prometheus StorCLI Exporter Service
 After=network.target
 
 [Service]
-ExecStart=/opt/storcli_exporter/storcli_exporter
+ExecStart=/opt/storcli_exporter/storcli_exporter \
+    -listen_address :9326 \
+    -metrics_path /metrics \
+    -metrics_prefix storcli \
+    -storcli_path /opt/MegaRAID/storcli/storcli64
 User=root
 Group=root
 Restart=always
