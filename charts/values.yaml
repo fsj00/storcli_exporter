@@ -30,11 +30,11 @@ resources: {}
 livenessProbe:
   httpGet:
     path: /livez
-    port: http
+    port: metrics
 readinessProbe:
   httpGet:
     path: /readyz
-    port: http
+    port: metrics
 
 volumes: []
 
