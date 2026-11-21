@@ -294,6 +294,25 @@ func main() {
 			log.Printf("Failed to write to HTTP client: %s", err)
 		}
 	})
+	http.HandleFunc("/livez", func(w http.ResponseWriter, r *http.Request) {
+		_, err := w.Write([]byte(`ok`))
+		if err != nil {
+			log.Printf("Failed to write to HTTP client: %s", err)
+		}
+	})
+	http.HandleFunc("/readyz", func(w http.ResponseWriter, r *http.Request) {
+		_, err := registry.Gather()
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			w.Write([]byte(`error occured while trying to get storcli data`))
+			log.Printf("Failed to get storcli data: %s", err)
+			return
+		}
+		_, err = w.Write([]byte(`ok`))
+		if err != nil {
+			log.Printf("Failed to write to HTTP client: %s", err)
+		}
+	})
 
 	server := &http.Server{
 		Addr:         *argListenAddress,
