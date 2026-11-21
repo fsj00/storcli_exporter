@@ -1,20 +1,30 @@
 # StorCLI Exporter
+
 Export Prometheus metrics for StorCLI and PercCLI RAID utilities
 
 ## Supported MegaRAID utilities
-* PercCLI (Basically copy of StorCLI)
-* StorCLI (Tested with version 1.20.15)
+
+- PercCLI (Basically copy of StorCLI)
+- StorCLI (Tested with version 1.20.15)
 
 ## Status
+
 **Production (Released)**
 
+## Docker
+
+To build docker image, download storcli from Broadcom site and place the binary named as `storcli64 `to the `./storcli` folder.
+
 ## Up && Running
+
 Download the executable binary and run it with
+
 ```
 ./storcli_exporter <flags>
 ```
 
 ## Flags
+
 ```
 ./storcli_exporter -h
 Usage of ./storcli_exporter:
@@ -30,18 +40,20 @@ Usage of ./storcli_exporter:
 
 Flags can also be configured with environment variables:
 
-| Flag | Environment variable |
-| --- | --- |
-| `-listen_address` | `LISTEN_ADDRESS` |
-| `-metrics_path` | `METRICS_PATH` |
-| `-metrics_prefix` | `METRICS_PREFIX` |
-| `-storcli_path` | `STORCLI_PATH` |
+| Flag              | Environment variable |
+| ----------------- | -------------------- |
+| `-listen_address` | `LISTEN_ADDRESS`     |
+| `-metrics_path`   | `METRICS_PATH`       |
+| `-metrics_prefix` | `METRICS_PREFIX`     |
+| `-storcli_path`   | `STORCLI_PATH`       |
 
 CLI flags take precedence over environment variables. If neither is set, the
 built-in default is used.
 
 ## Prometheus
+
 Exporter metrics for Prometheus
+
 ```
 # HELP storcli_drive_groups_count Count of available Drive Groups.
 # TYPE storcli_drive_groups_count gauge
@@ -98,4 +110,5 @@ storcli_virtual_drive_status{controller="0",size="65.491 TB",slot="2/2",state="D
 ```
 
 ## License
+
 Distributed under the MIT License. See LICENSE for more information.
