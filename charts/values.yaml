@@ -32,6 +32,7 @@ livenessProbe:
     path: /livez
     port: metrics
 readinessProbe:
+  timeoutSeconds: 10
   httpGet:
     path: /readyz
     port: metrics
